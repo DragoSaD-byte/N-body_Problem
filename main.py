@@ -82,6 +82,7 @@ class App:
     def mainloop(self):
         self.configurationWindow.mainloop()
 
+
 class sim(tkinter.Tk):
     def __init__(self, conf):
         super().__init__()
