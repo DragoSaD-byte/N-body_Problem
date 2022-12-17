@@ -3,30 +3,35 @@ from tkinter import colorchooser, messagebox
 from model import *
 
 
-class App:
+class App(tk.Tk):
+    """
+    Класс основного приложения.
+    """
+
     def __init__(self):
-        self.configurationWindow = tk.Tk()
-        self.configurationWindow.config(height=300, width=730)
-        self.mainmenu = tk.Menu(self.configurationWindow)
-        self.configurationWindow.config(menu=self.mainmenu)
+        super().__init__()
+        self.resizable(False, False)
+        self.config(height=288, width=730)
+        self.mainmenu = tk.Menu(self)
+        self.config(menu=self.mainmenu)
         self.mainmenu.add_command(label="Запуск симуляции", command=self.start_sim)
         self.mainmenu.add_command(label="Добавить тело", command=self.add_body)
         self.mainmenu.add_command(label="Убрать тело", command=self.pop_body)
-        self.mainmenu.add_command(label="Сохранить настройки", command=self.save)
-        self.mainmenu.add_command(label="Загрузить настройки", command=self.load)
-        self.bot_frame = tk.LabelFrame(self.configurationWindow, text="Тела:")
+        self.bot_frame = tk.LabelFrame(self, text="Тела:")
         self.bot_frame.place(x=10, y=0)
         self.outputs = []
         self.sims = set()
 
+        # Задание стартовых настроек
         self.add_body((250, 200, -0.000022, 0, 3000, "white", "green"))
         self.add_body((250, 300, 0.000022, 0, 3000, "white", "green"))
-
-        # self.add_body((250, 250, -0.0000022, 0, 3000, "white", "green"))
-        # self.add_body((253, 50, 0.00033, -0.000002, 10, "white", "green"))
-        # self.add_body((247, 50, 0.00033, 0.000002, 10, "white", "green"))
+        # self.add_body((250, 250, -0.00000022, 0, 3000, "white", "green"))
+        # self.add_body((253, 50, 0.000033, -0.000002, 10, "white", "green"))
+        # self.add_body((247, 50, 0.000033, 0.000002, 10, "white", "green"))
 
     def add_body(self, inputs=tuple([0, 0, 0, 0, 0, "white", "green"])):
+        if len(self.outputs) == 9:
+            return
         frame = tk.LabelFrame(self.bot_frame, text=f"Тело {len(self.outputs) + 1}")
         output = [frame]
         for i in inputs[:-2]:
@@ -47,19 +52,12 @@ class App:
         output[3].grid(row=1, column=4)
         output[4].grid(row=2, column=4)
 
-        tk.Label(frame, text="Mass").grid(row=0, column=5, columnspan=3)
+        tk.Label(frame, text="Mass, Color").grid(row=0, column=5, columnspan=3)
         tk.Label(frame, text="M:").grid(row=1, column=5)
         output[5].grid(row=1, column=6, columnspan=2)
 
-        def color_selection_a():
-            (rgb, hx) = colorchooser.askcolor()
-            output[6].config(bg=hx)
-        output[6].config(command=color_selection_a)
-
-        def color_selection_b():
-            (rgb, hx) = colorchooser.askcolor()
-            output[7].config(bg=hx)
-        output[7].config(command=color_selection_b)
+        output[6].config(command=lambda: output[6].config(bg=colorchooser.askcolor()[1]))
+        output[7].config(command=lambda: output[7].config(bg=colorchooser.askcolor()[1]))
 
         output[6].grid(row=2, column=5, columnspan=2)
         output[7].grid(row=2, column=7)
@@ -67,21 +65,21 @@ class App:
         frame.grid(row=len(self.outputs) // 3, column=len(self.outputs) % 3)
         self.outputs.append(output)
 
-    def load(self):
-        print(self.sims)
-        for i in self.sims:
-            i.destroy()
-
-    def save(self):
-        print(self.read_conf())
-
     def pop_body(self):
+
         if len(self.outputs) > 1:
             self.outputs[-1][0].destroy()
             self.outputs.pop(-1)
 
     def start_sim(self):
-        self.sims.add(sim(self.read_conf()))
+        """
+        Функция создаёт окно симуляции
+        :return:
+        """
+        try:
+            self.sims.add(sim(self.read_conf()))
+        except ValueError:
+            messagebox.showerror("Ошибка", "Все поля должны быть заполнены числами")
 
     def read_conf(self):
         ret = []
@@ -93,25 +91,40 @@ class App:
                 ret.append(tuple(a))
             return tuple(ret)
         except ValueError:
-            messagebox.showerror("Ошибка", "Все поля должны быть заполнены числами")
-
-    def mainloop(self):
-        self.configurationWindow.mainloop()
+            raise ValueError("В одном из полей не число")
 
 
-class sim(tk.Tk):
+class sim(tk.Toplevel):
+    """
+    Класс окна симуляции.
+    """
+
     def __init__(self, conf):
+        """
+        Класс
+        :param conf:
+        """
         super().__init__()
         self.canvas = tk.Canvas(self, height=500, width=500, background="black")
         self.body = tuple(MSolid(self.canvas, *i) for i in conf)
         self.canvas.pack()
-        self.update_sim()
-        self.last_cords = (0, 0)
+        self.resizable(False, False)
+        self.vectors = tuple(
+            {
+                "velocity": None,
+                "f": None
+            } for _ in range(len(self.body)))
 
         def click(event):
+            """
+            Функция обработчик нажатия на левую кнопку мышки.
+            """
             self.last_cords = (event.x, event.y)
 
         def motion(event):
+            """
+            Функция обработки передвижения курсора вместе с нажатием левой кнопки мыши.
+            """
             dx = event.x - self.last_cords[0]
             dy = event.y - self.last_cords[1]
             for i in self.body:
@@ -119,16 +132,68 @@ class sim(tk.Tk):
             self.last_cords = (event.x, event.y)
 
         def mouse_wheel(event):
-            delta = event.delta / 120
+            """
+            Функция обработки движения колеса.
+            :param event:
+            """
+            delta = event.delta / 2400
             x = event.x
             y = event.y
             for i in self.body:
                 i.resize(delta, x, y)
 
+        self.last_cords = (0, 0)
         self.bind("<Button-1>", click)
         self.bind_all("<B1-Motion>", motion)
         self.bind("<MouseWheel>", mouse_wheel)
 
+        self.create_menu()
+        self.update_sim()
+
+    def create_menu(self):
+        """
+        Функция создания меню. Вспомогательная функция для инициализации.
+        """
+        menu = tk.Menu(self, tearoff=0)
+
+        self.bind("<Button-3>", lambda event: menu.post(event.x_root, event.y_root))
+
+        self.relatively = tk.IntVar()
+        self.relatively.set(-1)
+        relatively_menu = tk.Menu(menu, tearoff=0)
+        relatively_menu.add_radiobutton(label="Начала координат", value=-1, variable=self.relatively)
+        for i in range(len(self.body)):
+            relatively_menu.add_radiobutton(label="Тела " + str(i + 1), value=i, variable=self.relatively)
+        menu.add_cascade(label="Траектория относительно", menu=relatively_menu)
+        menu.add_separator()
+
+        self.vectors_settings = tuple(
+            {
+                "velocity": tk.IntVar(name=str(i) + " velocity"),
+                "f": tk.IntVar(name=str(i) + " f")
+            } for i in range(len(self.body)))
+
+        for i in range(len(self.body)):
+            self.vectors_settings[i]["velocity"].trace("w", self.change_processing)
+            self.vectors_settings[i]["f"].trace("w", self.change_processing)
+            body_menu = tk.Menu(menu, tearoff=0)
+            body_menu.add_checkbutton(label="Скорость", variable=self.vectors_settings[i]["velocity"])
+            body_menu.add_checkbutton(label="Сила", variable=self.vectors_settings[i]["f"])
+            menu.add_cascade(label="Тело " + str(i), menu=body_menu)
+
+    ## Функция обработки изменения флагов отображения векторов.
+    # Событие изменения флага
+    def change_processing(self, *args):
+        i, v = args[0].split()
+        if self.vectors_settings[int(i)][v].get():
+            self.vectors[int(i)][v] = BodyVector(self.canvas, self.body[int(i)], v)
+        else:
+            self.vectors[int(i)][v] = None
+
+
+    ## Метод обновления симуляции.
+    # Симулирует 10000 шагов симуляции, после чего отрисовывает изменения.
+    # Метод после выполнения ставит задачу выполнить самого себя ещё раз.
     def update_sim(self):
         for _ in range(10000):
             for i in range(len(self.body)):
@@ -140,7 +205,15 @@ class sim(tk.Tk):
                 i.move()
         for i in self.body:
             i.update()
-            i.update_track()
+        for i in self.body:
+            if self.relatively.get() != -1:
+                i.update_track(relatively=self.body[self.relatively.get()])
+            else:
+                i.update_track()
+        for vector in self.vectors:
+            for key in vector.keys():
+                if vector[key]:
+                    vector[key].update()
         self.update()
         self.after(0, self.update_sim)
 
