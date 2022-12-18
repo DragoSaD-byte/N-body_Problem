@@ -17,7 +17,7 @@ class App(tk.Tk):
         self.mainmenu.add_command(label="Запуск симуляции", command=self.start_sim)
         self.mainmenu.add_command(label="Добавить тело", command=self.add_body)
         self.mainmenu.add_command(label="Убрать тело", command=self.pop_body)
-        self.bot_frame = tk.LabelFrame(self, text="Тела:")
+        self.bot_frame = tk.LabelFrame(self, text="Тела:", )
         self.bot_frame.place(x=10, y=0)
         self.outputs = []
         self.sims = set()
@@ -106,6 +106,7 @@ class sim(tk.Toplevel):
         """
         super().__init__()
         self.canvas = tk.Canvas(self, height=500, width=500, background="black")
+        tk.Scrollbar(self.canvas)
         self.body = tuple(MSolid(self.canvas, *i) for i in conf)
         self.canvas.pack()
         self.resizable(False, False)
@@ -195,14 +196,18 @@ class sim(tk.Toplevel):
     # Симулирует 10000 шагов симуляции, после чего отрисовывает изменения.
     # Метод после выполнения ставит задачу выполнить самого себя ещё раз.
     def update_sim(self):
+        # Шаги симуляции
         for _ in range(10000):
+            # Рассчет сил для каждого тела
             for i in range(len(self.body)):
                 for j in range(i + 1, len(self.body)):
                     f = find_F(self.body[i], self.body[j])
                     self.body[i].apply_force(f)
                     self.body[j].apply_force((-f[0], -f[1]))
+            # Сдвиг тел
             for i in self.body:
                 i.move()
+        # Обновление тел и треков
         for i in self.body:
             i.update()
         for i in self.body:
@@ -210,10 +215,12 @@ class sim(tk.Toplevel):
                 i.update_track(relatively=self.body[self.relatively.get()])
             else:
                 i.update_track()
+        # Проверка обновлений векторов
         for vector in self.vectors:
             for key in vector.keys():
                 if vector[key]:
                     vector[key].update()
+        # Отрисовка и новая задача обновить экран
         self.update()
         self.after(0, self.update_sim)
 
