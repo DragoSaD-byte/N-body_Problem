@@ -148,10 +148,10 @@ class Test_MSolid:
             assert t.coordinate == [i, i]
 
     def test_MSolid_resize(self):
-        for i in range(10):
+        for i in range(1, 10):
             t = MSolid(self.c, 100, 100, 0, 0, 100)
             t.resize(i, 0, 0)
-            assert t.mass == 100 * (i+1)
+            assert t.mass == 100 * (i + 1)
             assert t.coordinate[0] == 100 * (i + 1)
             assert t.coordinate[1] == 100 * (i + 1)
 

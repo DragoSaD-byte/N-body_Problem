@@ -30,6 +30,9 @@ class App(tk.Tk):
         # self.add_body((247, 50, 0.000033, 0.000002, 10, "white", "green"))
 
     def add_body(self, inputs=tuple([0, 0, 0, 0, 0, "white", "green"])):
+        """! Метод добавления дополниельного поля ввода для параметров тела.
+        @param inputs: Опцианально. Начальные значения полей.
+        """
         if len(self.outputs) == 9:
             return
         frame = tk.LabelFrame(self.bot_frame, text=f"Тело {len(self.outputs) + 1}")
@@ -66,15 +69,14 @@ class App(tk.Tk):
         self.outputs.append(output)
 
     def pop_body(self):
-
+        """! Метод удаления последнего поля конфигурации тела.
+        """
         if len(self.outputs) > 1:
             self.outputs[-1][0].destroy()
             self.outputs.pop(-1)
 
     def start_sim(self):
-        """
-        Функция создаёт окно симуляции
-        :return:
+        """! Метод создания окна симуляции.
         """
         try:
             self.sims.add(sim(self.read_conf()))
@@ -82,6 +84,9 @@ class App(tk.Tk):
             messagebox.showerror("Ошибка", "Все поля должны быть заполнены числами")
 
     def read_conf(self):
+        """! Метод считывания настроек.
+        @throw ValueError: Возникает, если в одном из полей конфигурации тела было введено не число.
+        """
         ret = []
         try:
             for i in self.outputs:
@@ -95,14 +100,12 @@ class App(tk.Tk):
 
 
 class sim(tk.Toplevel):
-    """
-    Класс окна симуляции.
+    """! Класс окна симуляции.
     """
 
     def __init__(self, conf):
-        """
-        Класс
-        :param conf:
+        """! Метод инициализации.
+        @param conf: Итератор, в котором находятся стартовые параметры для тел симуляции.
         """
         super().__init__()
         self.canvas = tk.Canvas(self, height=500, width=500, background="black")
@@ -117,14 +120,14 @@ class sim(tk.Toplevel):
             } for _ in range(len(self.body)))
 
         def click(event):
-            """
-            Функция обработчик нажатия на левую кнопку мышки.
+            """! Метод обработчик нажатия на левую кнопку мышки.
+            @args: Событие клика.
             """
             self.last_cords = (event.x, event.y)
 
         def motion(event):
-            """
-            Функция обработки передвижения курсора вместе с нажатием левой кнопки мыши.
+            """! Метод обработки передвижения курсора вместе с нажатием левой кнопки мыши.
+            @args: Событие передвижения миши с нажатой левой кнопкой мыши.
             """
             dx = event.x - self.last_cords[0]
             dy = event.y - self.last_cords[1]
@@ -133,15 +136,14 @@ class sim(tk.Toplevel):
             self.last_cords = (event.x, event.y)
 
         def mouse_wheel(event):
+            """! Метод обработки движения колеса.
+            @args: Событие прокрутки колёсика.
             """
-            Функция обработки движения колеса.
-            :param event:
-            """
-            delta = event.delta / 2400
+
             x = event.x
             y = event.y
             for i in self.body:
-                i.resize(delta, x, y)
+                i.resize(event.delta // 120, x, y)
 
         self.last_cords = (0, 0)
         self.bind("<Button-1>", click)
@@ -152,8 +154,7 @@ class sim(tk.Toplevel):
         self.update_sim()
 
     def create_menu(self):
-        """
-        Функция создания меню. Вспомогательная функция для инициализации.
+        """! Метод создания меню. Вспомогательный метод для инициализации.
         """
         menu = tk.Menu(self, tearoff=0)
 
@@ -182,9 +183,10 @@ class sim(tk.Toplevel):
             body_menu.add_checkbutton(label="Сила", variable=self.vectors_settings[i]["f"])
             menu.add_cascade(label="Тело " + str(i), menu=body_menu)
 
-    ## Функция обработки изменения флагов отображения векторов.
-    # Событие изменения флага
-    def change_processing(self, *args):
+    def change_processing(self, args):
+        """! Функция обработки изменения флагов отображения векторов.
+        @args: Событие изменения флага.
+        """
         i, v = args[0].split()
         if self.vectors_settings[int(i)][v].get():
             self.vectors[int(i)][v] = BodyVector(self.canvas, self.body[int(i)], v)
@@ -192,10 +194,11 @@ class sim(tk.Toplevel):
             self.vectors[int(i)][v] = None
 
 
-    ## Метод обновления симуляции.
-    # Симулирует 10000 шагов симуляции, после чего отрисовывает изменения.
-    # Метод после выполнения ставит задачу выполнить самого себя ещё раз.
     def update_sim(self):
+        """!Метод обновления симуляции.
+        Симулирует 10000 шагов симуляции, после чего отрисовывает изменения.
+        Метод после выполнения ставит задачу выполнить самого себя ещё раз.
+        """
         # Шаги симуляции
         for _ in range(10000):
             # Рассчет сил для каждого тела
@@ -210,7 +213,6 @@ class sim(tk.Toplevel):
         # Обновление тел и треков
         for i in self.body:
             i.update()
-        for i in self.body:
             if self.relatively.get() != -1:
                 i.update_track(relatively=self.body[self.relatively.get()])
             else:
