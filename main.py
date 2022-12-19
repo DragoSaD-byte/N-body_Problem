@@ -24,9 +24,9 @@ class App(tk.Tk):
         # Задание стартовых настроек
         self.add_body((250, 200, -0.000022, 0, 3000, "white", "green"))
         self.add_body((250, 300, 0.000022, 0, 3000, "white", "green"))
-        # self.add_body((250, 250, -0.00000022, 0, 3000, "white", "green"))
-        # self.add_body((253, 50, 0.000033, -0.000002, 10, "white", "green"))
-        # self.add_body((247, 50, 0.000033, 0.000002, 10, "white", "green"))
+        self.add_body((250, 250, -0.00000022, 0, 3000, "white", "green"))
+        self.add_body((253, 50, 0.000033, -0.000002, 10, "white", "green"))
+        self.add_body((247, 50, 0.000033, 0.000002, 10, "white", "green"))
 
     def add_body(self, inputs=tuple([0, 0, 0, 0, 0, "white", "green"])):
         """! Метод добавления дополниельного поля ввода для параметров тела.
@@ -108,7 +108,7 @@ class sim(tk.Toplevel):
         """
         super().__init__()
         self.canvas = tk.Canvas(self, height=500, width=500, background="black")
-        tk.Scrollbar(self.canvas)
+        self.center_mass = CentrMass(self.canvas)
         self.body = tuple(MSolid(self.canvas, *i) for i in conf)
         self.canvas.pack()
         self.resizable(False, False)
@@ -168,6 +168,15 @@ class sim(tk.Toplevel):
         menu.add_cascade(label="Траектория относительно", menu=relatively_menu)
         menu.add_separator()
 
+        self.center_mass_settings = [tk.IntVar() for i in range(len(self.body))]
+        center_mass_menu = tk.Menu(menu, tearoff=0)
+        for i in range(len(self.body)):
+            center_mass_menu.add_checkbutton(label="Тело " + str(i), variable=self.center_mass_settings[i])
+
+        menu.add_cascade(label="Центр масс", menu=center_mass_menu)
+
+        menu.add_separator()
+
         self.vectors_settings = tuple(
             {
                 "velocity": tk.IntVar(name=str(i) + " velocity"),
@@ -180,9 +189,9 @@ class sim(tk.Toplevel):
             body_menu = tk.Menu(menu, tearoff=0)
             body_menu.add_checkbutton(label="Скорость", variable=self.vectors_settings[i]["velocity"])
             body_menu.add_checkbutton(label="Сила", variable=self.vectors_settings[i]["f"])
-            menu.add_cascade(label="Тело " + str(i), menu=body_menu)
+            menu.add_cascade(label="Тело " + str(i+1), menu=body_menu)
 
-    def change_processing(self, args):
+    def change_processing(self, *args):
         """! Функция обработки изменения флагов отображения векторов.
         @args: Событие изменения флага.
         """
@@ -191,7 +200,6 @@ class sim(tk.Toplevel):
             self.vectors[int(i)][v] = BodyVector(self.canvas, self.body[int(i)], v)
         else:
             self.vectors[int(i)][v] = None
-
 
     def update_sim(self):
         """!Метод обновления симуляции.
@@ -221,6 +229,10 @@ class sim(tk.Toplevel):
             for key in vector.keys():
                 if vector[key]:
                     vector[key].update()
+        # Обновление положения центра масс
+        a = [self.center_mass_settings[i].get() for i in range(len(self.body))]
+        self.center_mass.visible(any(a))
+        self.center_mass.set_coords(center_mass([i[1] for i in filter(lambda x: x[0], zip(a, self.body))]))
         # Отрисовка и новая задача обновить экран
         self.update()
         self.after(0, self.update_sim)

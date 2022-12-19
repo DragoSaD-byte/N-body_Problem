@@ -4,7 +4,6 @@ from tkinter import TclError
 
 class MSolid:
     """! Класс описывет круглое тело с равномерным распределением массы для гравитационного взаимодействия.
-    @
     """
     def __init__(self, root, c_x, c_y, v_x, v_y, mass, color_self="white", color_track="green",
                  f_x=0, f_y=0, density=1):
@@ -132,8 +131,11 @@ class BodyVector:
         @throw TypeError: Возникает, если атрибута с передонным названием не является 2-мерным вектором.
         @throw AttributeError: Возникает, если не существует атрибута с передонным названием.
         """
+        ## Холст, на который рисуется вектор.
         self.root = root
+        ## Тело, вектор которого рисуется
         self.body = body
+        ## Названия атрибута тела, который содержит вектор
         self.vector = vector
         try:
             if len(eval("self.body." + self.vector)) != 2:
@@ -146,7 +148,8 @@ class BodyVector:
             raise TypeError("При создании BodyVector передан не вектор")
         x = self.body.coordinate[0]
         y = self.body.coordinate[1]
-        self.a = 10 ** (len(str(
+        ## Переменная для мастабирования вектора
+        self.scale = 10 ** (len(str(
             int(30 / sqrt(eval("self.body." + self.vector)[0] ** 2 + eval("self.body." + self.vector)[1] ** 2)))) - 1)
 
         self.line = self.root.create_line(x, y, eval("self.body." + self.vector)[0] + x,
@@ -158,8 +161,8 @@ class BodyVector:
         x = self.body.coordinate[0]
         y = self.body.coordinate[1]
         try:
-            self.root.coords(self.line, x, y, eval("self.body." + self.vector)[0] * self.a + x,
-                             eval("self.body." + self.vector)[1] * self.a + y)
+            self.root.coords(self.line, x, y, eval("self.body." + self.vector)[0] * self.scale + x,
+                             eval("self.body." + self.vector)[1] * self.scale + y)
         except TclError:
             pass
 
@@ -167,6 +170,42 @@ class BodyVector:
         """! Деструктор
         """
         self.root.delete(self.line)
+
+
+class CentrMass(MSolid):
+    """! Класс для отображения центра масс.
+    """
+    def __init__(self, root):
+        """! Инициализация
+        @param root: Холст, на котором будет рисоваться центр масс
+        """
+        super().__init__(root, 0, 0, 0, 0, 0, color_self="grey", color_track="black")
+        self.root.tag_raise(self.solid)
+        self.r = 10
+
+    def set_coords(self, coords):
+        """! Метод установки координат.
+        При обновлении координат обновляет своё положение на холсте.
+        """
+        self.coordinate = coords
+        self.update()
+
+    def visible(self, option):
+        """! Метод установки видимости центра масс.
+        """
+        try:
+            if option:
+                self.root.tag_raise(self.solid)
+                self.root.tag_raise(self.track[0])
+                self.root.itemconfig(self.solid, fill="grey")
+            else:
+                self.root.tag_lower(self.solid)
+                self.root.tag_lower(self.track[0])
+                self.root.itemconfig(self.solid, fill="black")
+        except TclError:
+            pass
+
+
 
 
 def find_F(a: MSolid, b: MSolid) -> tuple:
@@ -191,6 +230,8 @@ def center_mass(body: list[MSolid]) -> tuple:
     @param body: Итератор, который включает в себя тела, для которых надо найти центр масс
     @return: Координаты центра масс в виде (х, y)
     """
+    if len(body) == 0:
+        return (0, 0)
     M = [0, 0]
     for a in body:
         M[0] += a.mass * a.coordinate[0]
