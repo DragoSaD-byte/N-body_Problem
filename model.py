@@ -1,3 +1,5 @@
+"""! Модуль математического моделирования задачи
+"""
 from math import sqrt, pi
 from tkinter import TclError
 
@@ -21,18 +23,28 @@ class MSolid:
         @param density: Опциональный. Плотность тела (по умолчанию 1).
         @return: Экземпляр класса с указанными параметрами.
         """
+        ## Масса тела.
         self.mass = mass
+        ## Координата тела
         self.coordinate = [c_x, c_y]
+        ## Вектор скорости тела
         self.velocity = [v_x, v_y]
+        ## Равнодействующая сила
         self.force = [f_x, f_y]
+        ## Плотность тела
         self.density = density
+        ## Холст, на котором рисуеться тело
         self.root = root
+        ## Радиус тела
         self.r = sqrt(abs(self.mass / self.density / pi))
+        ## Равнодействующая сила на прошлом шаге
         self.f = [0, 0]
+        ## Переменная для хранения индекса тела на холсте.
         self.solid = root.create_oval(
             int(self.coordinate[0] - self.r), int(self.coordinate[1] - self.r),
             int(self.coordinate[0] + self.r), int(self.coordinate[1] + self.r),
             fill=color_self)
+        ## Список, содержащий индекс линии трека на холсте и трек тела.
         self.track = list([root.create_line(0, 0, 0, 0, fill=color_track)]) + list(self.coordinate)
         root.tag_lower(self.track[0])
 
@@ -133,9 +145,9 @@ class BodyVector:
         """
         ## Холст, на который рисуется вектор.
         self.root = root
-        ## Тело, вектор которого рисуется
+        ## Тело, вектор которого рисуется.
         self.body = body
-        ## Названия атрибута тела, который содержит вектор
+        ## Названия атрибута тела, который содержит вектор.
         self.vector = vector
         try:
             if len(eval("self.body." + self.vector)) != 2:
@@ -148,10 +160,10 @@ class BodyVector:
             raise TypeError("При создании BodyVector передан не вектор")
         x = self.body.coordinate[0]
         y = self.body.coordinate[1]
-        ## Переменная для мастабирования вектора
+        ## Переменная для мастабирования вектора.
         self.scale = 10 ** (len(str(
             int(30 / sqrt(eval("self.body." + self.vector)[0] ** 2 + eval("self.body." + self.vector)[1] ** 2)))) - 1)
-
+        ## Переменная для хранения индекса тега вектора на холсте.
         self.line = self.root.create_line(x, y, eval("self.body." + self.vector)[0] + x,
                                           eval("self.body." + self.vector)[1] + y, width=1, fill=color)
 
@@ -176,7 +188,8 @@ class CentrMass(MSolid):
     """! Класс для отображения центра масс.
     """
     def __init__(self, root):
-        """! Инициализация
+        """! Инициализация.
+        Масса, скоость и координата устанавливаються на 0. Цвет трека - Чёрный. Цвет тела - Серый. Радиус = 10
         @param root: Холст, на котором будет рисоваться центр масс
         """
         super().__init__(root, 0, 0, 0, 0, 0, color_self="grey", color_track="black")
