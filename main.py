@@ -4,8 +4,7 @@ from model import *
 
 
 class App(tk.Tk):
-    """
-    Класс основного приложения.
+    """! Класс основного приложения.
     """
 
     def __init__(self):
@@ -71,7 +70,7 @@ class App(tk.Tk):
     def pop_body(self):
         """! Метод удаления последнего поля конфигурации тела.
         """
-        if len(self.outputs) > 1:
+        if len(self.outputs) > 0:
             self.outputs[-1][0].destroy()
             self.outputs.pop(-1)
 
