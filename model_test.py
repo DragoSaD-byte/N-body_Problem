@@ -3,14 +3,6 @@ from model import *
 import pytest
 from unittest.mock import Mock
 
-
-# def test_fun():
-#     fun = Mock()
-#     fun.return_value = 1
-#     # fun.side_effect = Exeption()
-#     # fun.assert_called_with(args)
-
-
 class Test_find_F:
     c = Mock()
 
